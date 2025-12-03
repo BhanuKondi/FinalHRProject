@@ -1,0 +1,41 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2>Leave Approval Workflow Settings</h2>
+    <hr>
+
+    <form method="POST">
+
+        <div class="form-group">
+            <label>Level 1 Approver</label>
+            <select name="level1" class="form-control">
+                <option value="">-- Select User --</option>
+                {% for u in users %}
+                    <option value="{{ u.id }}" 
+                        {% if config.level1_approver_id == u.id %} selected {% endif %}>
+                        {{ u.username }} ({{ u.email }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group mt-3">
+            <label>Level 2 Approver</label>
+            <select name="level2" class="form-control">
+                <option value="">-- Select User --</option>
+                {% for u in users %}
+                    <option value="{{ u.id }}" 
+                        {% if config.level2_approver_id == u.id %} selected {% endif %}>
+                        {{ u.username }} ({{ u.email }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button class="btn btn-primary mt-4" type="submit">Save Settings</button>
+
+    </form>
+</div>
+{% endblock %}

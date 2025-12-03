@@ -1,0 +1,281 @@
+{% extends "admin/admin_base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Employees</h2>
+</div>
+
+<!-- Search + Add Button Row -->
+<div class="d-flex justify-content-between mb-3">
+    <div class="input-group" style="max-width: 400px;">
+        <input id="searchInput" type="text" class="form-control" placeholder="Search employees..."
+               onkeyup="searchEmployees()">
+        <button class="btn btn-outline-secondary" type="button" onclick="searchEmployees()">Search</button>
+    </div>
+
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+        + Add Employee
+    </button>
+</div>
+
+<!-- Employees Table -->
+<table class="table table-bordered table-hover table-striped mt-3" id="employeeTable">
+    <thead class="table-light">
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Department</th>
+            <th>Join Date</th>
+            <th>Manager</th>
+            <th>Status</th>
+            <th style="width:180px;">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for emp in employees %}
+        <tr>
+            <td>{{ emp.emp_code }}</td>
+            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td>{{ emp.work_email }}</td>
+            <td>{{ emp.phone }}</td>
+            <td>{{ emp.department }}</td>
+            <td>{{ emp.date_of_joining }}</td>
+            <td>
+                {% if emp.manager_emp_id %}
+                    {% set mgr = (employees | selectattr('id','equalto', emp.manager_emp_id) | list).0 %}
+                    {% if mgr %}
+                        {{ mgr.first_name }} {{ mgr.last_name }}
+                    {% else %}
+                        (Manager)
+                    {% endif %}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                {% if emp.status == 'Active' %}
+                    <span class="badge bg-success">{{ emp.status }}</span>
+                {% elif emp.status == 'Inactive' %}
+                    <span class="badge bg-secondary">{{ emp.status }}</span>
+                {% elif emp.status == 'Terminated' %}
+                    <span class="badge bg-danger">{{ emp.status }}</span>
+                {% endif %}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-info text-white"
+                        data-bs-toggle="modal"
+                        data-bs-target="#viewEmployeeModal"
+                        onclick="loadEmployee('{{ emp.id}}')">
+                    View
+                </button>
+
+                <button class="btn btn-sm btn-warning"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editEmployeeModal"
+                        onclick="loadEmployeeEdit('{{ emp.id }}')">
+                    Edit
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ================= ADD EMPLOYEE MODAL ================= -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Add Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/admin/employees/add" method="POST">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label>Employee Code</label>
+              <input type="text" name="emp_code" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>First Name</label>
+              <input type="text" name="first_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>Last Name</label>
+              <input type="text" name="last_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>Email</label>
+              <input type="email" name="work_email" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>Phone</label>
+              <input type="text" name="phone" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Department</label>
+              <input type="text" name="department" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Job Title</label>
+              <input type="text" name="job_title" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Date of Joining</label>
+              <input type="date" name="date_of_joining" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label>Address</label>
+              <textarea name="address" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label>Select Manager</label>
+              <select name="manager_emp_id" class="form-control">
+                  <option value="">-- No Manager --</option>
+                  {% if managers %}
+                      {% for m in managers %}
+                          <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }}</option>
+                      {% endfor %}
+                  {% endif %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label>Role</label>
+              <select name="role_id" class="form-control" required>
+                <option value="1">Admin</option>
+                <option value="2">Manager</option>
+                <option value="3">Employee</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label>Temporary Password</label>
+              <input type="text" name="password" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT EMPLOYEE MODAL ================= -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Edit Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editEmployeeForm" method="POST">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label>First Name</label>
+              <input type="text" name="first_name" id="e_first" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Last Name</label>
+              <input type="text" name="last_name" id="e_last" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Email</label>
+              <input type="email" name="work_email" id="e_email" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Phone</label>
+              <input type="text" name="phone" id="e_phone" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Department</label>
+              <input type="text" name="department" id="e_department" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Job Title</label>
+              <input type="text" name="job_title" id="e_job" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Select Manager</label>
+              <select name="manager_emp_id" id="e_manager" class="form-control">
+                  <option value="">-- No Manager --</option>
+                  {% if managers %}
+                      {% for m in managers %}
+                          <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }}</option>
+                      {% endfor %}
+                  {% endif %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label>Address</label>
+              <textarea name="address" id="e_address" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label>Status</label>
+              <select name="status" id="e_status" class="form-control">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Terminated">Terminated</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function loadEmployee(id) {
+    fetch(`/admin/employees/view/${id}`)
+        .then(resp => resp.json())
+        .then(data => {
+            document.getElementById("v_code").innerText = data.emp_code;
+            document.getElementById("v_name").innerText = data.first_name + " " + data.last_name;
+            document.getElementById("v_email").innerText = data.work_email;
+            document.getElementById("v_phone").innerText = data.phone;
+            document.getElementById("v_department").innerText = data.department;
+            document.getElementById("v_job").innerText = data.job_title;
+            document.getElementById("v_address").innerText = data.address;
+            document.getElementById("v_date").innerText = data.date_of_joining;
+            document.getElementById("v_manager").innerText = data.manager ? data.manager.name : "-";
+        });
+}
+
+function loadEmployeeEdit(id) {
+    fetch(`/admin/employees/view/${id}`)
+        .then(resp => resp.json())
+        .then(data => {
+            document.getElementById("editEmployeeForm").action = `/admin/employees/edit/${id}`;
+            document.getElementById("e_first").value = data.first_name;
+            document.getElementById("e_last").value = data.last_name;
+            document.getElementById("e_email").value = data.work_email;
+            document.getElementById("e_phone").value = data.phone;
+            document.getElementById("e_department").value = data.department;
+            document.getElementById("e_job").value = data.job_title;
+            document.getElementById("e_address").value = data.address;
+            document.getElementById("e_status").value = data.status || "Active";
+            if (data.manager && data.manager.id) {
+                document.getElementById("e_manager").value = data.manager.id;
+            } else {
+                document.getElementById("e_manager").value = "";
+            }
+        });
+}
+
+function searchEmployees() {
+    let input = document.getElementById("searchInput").value.toLowerCase();
+    let rows = document.querySelectorAll("#employeeTable tbody tr");
+    rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+    });
+}
+</script>
+
+{% endblock %}

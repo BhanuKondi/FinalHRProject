@@ -1,0 +1,20 @@
+<h2>Holiday List</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Day</th>
+            <th>Occasion</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for h in holidays %}
+        <tr>
+            <td>{{ h.date }}</td>
+            <td>{{ h.day }}</td>
+            <td>{{ h.occasion }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

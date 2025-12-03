@@ -1,0 +1,27 @@
+{% extends "employee/employee_base.html" %}
+{% block title %}Holiday List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Company Holidays</h2>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Holiday</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in holidays %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ h.occasion }}</td>
+                <td>{{ h.date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

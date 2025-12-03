@@ -1,0 +1,204 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}Leave Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2>Leave Management</h2>
+
+    <!-- TAB BUTTONS -->
+    <div class="d-flex gap-2 flex-wrap mt-3 mb-4">
+        <button class="btn btn-secondary" onclick="showTab('holidays')">Holidays</button>
+        <button class="btn btn-info" onclick="showTab('approvals')">Pending Approvals</button>
+        <button class="btn btn-success" onclick="showTab('summary')">Employee Leave Summary</button>
+    </div>
+
+    <!-- ========================= HOLIDAYS TAB ========================= -->
+    <div id="holidays" class="tab-content" style="display:none;">
+
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>Company Holidays</h3>
+
+            <!-- Add Holiday Button -->
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addHolidayModal">
+                + Add Holiday
+            </button>
+        </div>
+
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Holiday</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="holidays-table-body">
+                {% for h in holidays %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ h.occasion }}</td>
+                    <td>{{ h.date }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No holidays added</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ========================= PENDING APPROVALS TAB ========================= -->
+    <div id="approvals" class="tab-content" style="display:none;">
+        <h3>Pending Approvals</h3>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Employee</th>
+                    <th>Period</th>
+                    <th>Days</th>
+                    <th>Reason</th>
+                    <th>Previous Decision</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="approvals-body">
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ========================= EMPLOYEE LEAVE SUMMARY TAB ========================= -->
+    <div id="summary" class="tab-content" style="display:none;">
+        <h3>Employee Leave Summary</h3>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Employee</th>
+                    <th>Total Leaves</th>
+                    <th>Consumed</th>
+                    <th>Remaining</th>
+                </tr>
+            </thead>
+            <tbody id="summary-body">
+                <tr>
+                    <td colspan="5" class="text-center text-muted">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================= ADD HOLIDAY MODAL ========================= -->
+<div class="modal fade" id="addHolidayModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('admin_leaves.add_holiday') }}" class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Add New Holiday</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="mb-3">
+          <label class="form-label">Holiday Name</label>
+          <input type="text" name="occasion" class="form-control" required placeholder="e.g., Independence Day">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <input type="date" name="date" class="form-control" required>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Add Holiday</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+function showTab(tabId) {
+    document.querySelectorAll(".tab-content").forEach(sec => sec.style.display = "none");
+    document.getElementById(tabId).style.display = "block";
+
+    if(tabId === "approvals") loadApprovals();
+    if(tabId === "summary") loadSummary();
+}
+
+// ------------------- APPROVALS -------------------
+function loadApprovals() {
+    fetch("{{ url_for('admin_leaves.pending_approvals') }}")
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+            if(data.length === 0) {
+                html = `<tr><td colspan="7" class="text-center text-muted">No pending approvals</td></tr>`;
+            } else {
+                data.forEach((l,i) => {
+                    html += `<tr>
+                        <td>${i+1}</td>
+                        <td>${l.name} (${l.emp_code})</td>
+                        <td>${l.start} → ${l.end}</td>
+                        <td>${l.days}</td>
+                        <td>${l.reason}</td>
+                        <td>${l.level1_decision_date ? "L1 Approved" : "Awaiting L1"}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="approve(${l.id})">Approve</button>
+                            <button class="btn btn-danger btn-sm" onclick="reject(${l.id})">Reject</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+            document.getElementById("approvals-body").innerHTML = html;
+        });
+}
+
+function approve(id){
+    fetch(`/admin/leaves/leave/approve/${id}`, {method:"POST"})
+        .then(()=>loadApprovals());
+}
+
+function reject(id){
+    fetch(`/admin/leaves/leave/reject/${id}`, {method:"POST"})
+        .then(()=>loadApprovals());
+}
+
+// ------------------- SUMMARY -------------------
+function loadSummary() {
+    fetch("{{ url_for('admin_leaves.leave_summary') }}")
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+            if(data.length === 0){
+                html = `<tr><td colspan="5" class="text-center text-muted">No employees found</td></tr>`;
+            } else {
+                data.forEach((e,i)=>{
+                    html += `<tr>
+                        <td>${i+1}</td>
+                        <td>${e.name} (${e.emp_code})</td>
+                        <td>${e.total}</td>
+                        <td>${e.consumed}</td>
+                        <td>${e.remaining}</td>
+                    </tr>`;
+                });
+            }
+            document.getElementById("summary-body").innerHTML = html;
+        });
+}
+
+// Show Holidays tab by default
+window.onload = () => showTab('holidays');
+</script>
+
+{% endblock %}
