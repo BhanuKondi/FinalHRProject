@@ -83,6 +83,36 @@
     </tbody>
 </table>
 
+<!-- ================= VIEW EMPLOYEE MODAL ================= -->
+<div class="modal fade" id="viewEmployeeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered"> <!-- Added modal-dialog-centered -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Employee Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6"><strong>Employee Code:</strong> <span id="v_code"></span></div>
+                    <div class="col-md-6"><strong>Name:</strong> <span id="v_name"></span></div>
+                    <div class="col-md-6"><strong>Email:</strong> <span id="v_email"></span></div>
+                    <div class="col-md-6"><strong>Phone:</strong> <span id="v_phone"></span></div>
+                    <div class="col-md-6"><strong>Department:</strong> <span id="v_department"></span></div>
+                    <div class="col-md-6"><strong>Job Title:</strong> <span id="v_job"></span></div>
+                    <div class="col-md-12"><strong>Address:</strong> <span id="v_address"></span></div>
+                    <div class="col-md-6"><strong>Date of Joining:</strong> <span id="v_date"></span></div>
+                    <div class="col-md-6"><strong>Manager:</strong> <span id="v_manager"></span></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ================= ADD EMPLOYEE MODAL ================= -->
 <div class="modal fade" id="addEmployeeModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -94,51 +124,22 @@
       <form action="/admin/employees/add" method="POST">
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-md-6">
-              <label>Employee Code</label>
-              <input type="text" name="emp_code" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label>First Name</label>
-              <input type="text" name="first_name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label>Last Name</label>
-              <input type="text" name="last_name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label>Email</label>
-              <input type="email" name="work_email" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label>Phone</label>
-              <input type="text" name="phone" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Department</label>
-              <input type="text" name="department" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Job Title</label>
-              <input type="text" name="job_title" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Date of Joining</label>
-              <input type="date" name="date_of_joining" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <label>Address</label>
-              <textarea name="address" class="form-control"></textarea>
-            </div>
+            <div class="col-md-6"><label>Employee Code</label><input type="text" name="emp_code" class="form-control" required></div>
+            <div class="col-md-6"><label>First Name</label><input type="text" name="first_name" class="form-control" required></div>
+            <div class="col-md-6"><label>Last Name</label><input type="text" name="last_name" class="form-control" required></div>
+            <div class="col-md-6"><label>Email</label><input type="email" name="work_email" class="form-control" required></div>
+            <div class="col-md-6"><label>Phone</label><input type="text" name="phone" class="form-control"></div>
+            <div class="col-md-6"><label>Department</label><input type="text" name="department" class="form-control"></div>
+            <div class="col-md-6"><label>Job Title</label><input type="text" name="job_title" class="form-control"></div>
+            <div class="col-md-6"><label>Date of Joining</label><input type="date" name="date_of_joining" class="form-control" required></div>
+            <div class="col-12"><label>Address</label><textarea name="address" class="form-control"></textarea></div>
             <div class="col-md-6">
               <label>Select Manager</label>
               <select name="manager_emp_id" class="form-control">
                   <option value="">-- No Manager --</option>
-                  {% if managers %}
-                      {% for m in managers %}
-                          <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }}</option>
-                      {% endfor %}
-                  {% endif %}
+                  {% for m in managers %}
+                      <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }}</option>
+                  {% endfor %}
               </select>
             </div>
             <div class="col-md-6">
@@ -149,12 +150,10 @@
                 <option value="3">Employee</option>
               </select>
             </div>
-            <div class="col-md-6">
-              <label>Temporary Password</label>
-              <input type="text" name="password" class="form-control" required>
-            </div>
+            <div class="col-md-6"><label>Temporary Password</label><input type="text" name="password" class="form-control" required></div>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Add Employee</button>
         </div>
@@ -171,42 +170,23 @@
         <h5 class="modal-title fw-bold">Edit Employee</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+
       <form id="editEmployeeForm" method="POST">
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-md-6">
-              <label>First Name</label>
-              <input type="text" name="first_name" id="e_first" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Last Name</label>
-              <input type="text" name="last_name" id="e_last" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Email</label>
-              <input type="email" name="work_email" id="e_email" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Phone</label>
-              <input type="text" name="phone" id="e_phone" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Department</label>
-              <input type="text" name="department" id="e_department" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label>Job Title</label>
-              <input type="text" name="job_title" id="e_job" class="form-control">
-            </div>
+            <div class="col-md-6"><label>First Name</label><input type="text" name="first_name" id="e_first" class="form-control"></div>
+            <div class="col-md-6"><label>Last Name</label><input type="text" name="last_name" id="e_last" class="form-control"></div>
+            <div class="col-md-6"><label>Email</label><input type="email" name="work_email" id="e_email" class="form-control"></div>
+            <div class="col-md-6"><label>Phone</label><input type="text" name="phone" id="e_phone" class="form-control"></div>
+            <div class="col-md-6"><label>Department</label><input type="text" name="department" id="e_department" class="form-control"></div>
+            <div class="col-md-6"><label>Job Title</label><input type="text" name="job_title" id="e_job" class="form-control"></div>
             <div class="col-md-6">
               <label>Select Manager</label>
               <select name="manager_emp_id" id="e_manager" class="form-control">
                   <option value="">-- No Manager --</option>
-                  {% if managers %}
-                      {% for m in managers %}
-                          <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }}</option>
-                      {% endfor %}
-                  {% endif %}
+                  {% for m in managers %}
+                      <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }}</option>
+                  {% endfor %}
               </select>
             </div>
             <div class="col-12">
@@ -223,14 +203,17 @@
             </div>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Update</button>
         </div>
+
       </form>
     </div>
   </div>
 </div>
 
+<!-- ================= JAVASCRIPT ================= -->
 <script>
 function loadEmployee(id) {
     fetch(`/admin/employees/view/${id}`)
@@ -261,6 +244,7 @@ function loadEmployeeEdit(id) {
             document.getElementById("e_job").value = data.job_title;
             document.getElementById("e_address").value = data.address;
             document.getElementById("e_status").value = data.status || "Active";
+
             if (data.manager && data.manager.id) {
                 document.getElementById("e_manager").value = data.manager.id;
             } else {
