@@ -12,6 +12,15 @@ def change_password():
 
     user = User.query.get(user_id)
 
+    # Decide base template dynamically
+    role = user.role.name.lower()
+    if role == "admin":
+        base_template = "admin/admin_base.html"
+    elif role=="manager":
+        base_template="manager/manager_base.html"
+    else:
+        base_template = "employee/employee_base.html"  # manager & employees use same
+
     if request.method == "POST":
         new_password = request.form.get("new_password")
 
@@ -22,12 +31,15 @@ def change_password():
         user.set_password(new_password)
         user.must_change_password = False
         db.session.commit()
+
         flash("Password updated successfully.", "success")
 
-        # Redirect based on role
-        if user.role.name.lower() == "admin":
+        # Redirect after success
+        if role == "admin":
             return redirect(url_for("admin.dashboard"))
+        elif role=="manager":
+            return redirect(url_for("manager.dashboard"))
         else:
-            return redirect("/employee/dashboard")
+            return redirect(url_for("employee.dashboard"))
 
-    return render_template("change_password.html", user=user)
+    return render_template("change_password.html", user=user, base_template=base_template)
