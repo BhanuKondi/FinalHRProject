@@ -55,6 +55,7 @@ def submit_leave():
         end_date=end,
         total_days=total_days,
         reason=request.form['reason'],
+        employee_name=request.form['employee_name'],
 
         status="PENDING_L1",
         level1_approver_id=config.level1_approver_id,
@@ -121,6 +122,7 @@ def my_approvals():
         final_list.append({
             "id": l.id,
             "emp_code": l.emp_code,
+            "employee_name":l.employee_name,
             "start": l.start_date.strftime("%Y-%m-%d"),
             "end": l.end_date.strftime("%Y-%m-%d"),
             "days": l.total_days,
