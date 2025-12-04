@@ -57,7 +57,7 @@
                 <tr>
                     <th>S.No</th>
                     <th>Employee</th>
-                    
+                    <th>Name</th>
                     <th>Period</th>
                     <th>Days</th>
                     <th>Reason</th>
@@ -150,7 +150,7 @@ function loadApprovals() {
                     html += `<tr>
                         <td>${i+1}</td>
                         <td>${l.emp_code}</td>
-                        
+                        <td>${l.employee_name}</td>
                         <td>${l.start} → ${l.end}</td>
                         <td>${l.days}</td>
                         <td>${l.reason}</td>
