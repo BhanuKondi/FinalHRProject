@@ -136,7 +136,7 @@ class Leavee(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     total_days = db.Column(db.Integer, nullable=False)
     reason = db.Column(db.Text, nullable=False)
-
+    employee_name=db.Column(db.String(45), nullable=False),
     status = db.Column(db.String(20), default="PENDING_L1")  # PENDING_L1, REJECTED_L1, PENDING_L2, APPROVED
     level1_approver_id = db.Column(db.Integer, nullable=True)
     level2_approver_id = db.Column(db.Integer, nullable=True)
