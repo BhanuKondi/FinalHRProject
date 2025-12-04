@@ -1,0 +1,40 @@
+name: Auto Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_HOST }}     # 20.196.112.197
+          username: ${{ secrets.AZURE_USER }} # azureuser
+          key: ${{ secrets.AZURE_SSH_KEY }}
+          script: |
+            echo ">>> Navigating to project folder"
+            cd /var/www/myproject/FinalHRProject/hr_application2
+
+            echo ">>> Pulling latest code"
+            git pull origin master
+
+            echo ">>> Recreating venv"
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install -r requirements.txt
+
+            echo ">>> Restarting Flask screen session"
+            # Kill existing Flask app
+            pkill -f "flask run" || true
+
+            # Restart inside a detached screen session
+            screen -dmS hrapp bash -c "cd /var/www/myproject/FinalHRProject/hr_application2 && source venv/bin/activate && flask run --host=0.0.0.0 --port=5050"
