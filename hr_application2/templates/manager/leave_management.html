@@ -52,7 +52,10 @@
                 <label class="form-label">Employee Code</label>
                 <input type="text" class="form-control" value="{{ employee.emp_code }}" name="emp_code" readonly>
             </div>
-
+            <div class="mb-3">
+                <label class="form-label">Employee Name</label>
+                <input type="text" class="form-control" value="{{ employee.first_name }} {{employee.last_name}}" name="employee_name" readonly>
+            </div>
             <div class="mb-3">
                 <label class="form-label">Start Date</label>
                 <input type="date" class="form-control" name="start_date" required>
@@ -82,6 +85,7 @@
                 <tr>
                     <th>S.No</th>
                     <th>Employee</th>
+                    <th>Name</th>
                     <th>Period</th>
                     <th>Days</th>
                     <th>Reason</th>
@@ -150,6 +154,7 @@ function loadApprovals() {
                         <tr>
                             <td>${i + 1}</td>
                             <td>${l.emp_code}</td>
+                            <td>${l.employee_name}</td>
                             <td>${l.start} → ${l.end}</td>
                             <td>${l.days}</td>
                             <td>${l.reason}</td>
