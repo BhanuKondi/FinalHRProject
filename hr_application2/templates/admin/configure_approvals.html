@@ -15,7 +15,7 @@
                 {% for u in users %}
                     <option value="{{ u.id }}" 
                         {% if config.level1_approver_id == u.id %} selected {% endif %}>
-                        {{ u.username }} ({{ u.email }})
+                        {{ u.username }} {{ u.email }}
                     </option>
                 {% endfor %}
             </select>
@@ -28,7 +28,7 @@
                 {% for u in users %}
                     <option value="{{ u.id }}" 
                         {% if config.level2_approver_id == u.id %} selected {% endif %}>
-                        {{ u.username }} ({{ u.email }})
+                        {{ u.username }} {{ u.email }}
                     </option>
                 {% endfor %}
             </select>
