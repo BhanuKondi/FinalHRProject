@@ -48,6 +48,7 @@ def pending_approvals():
         {
             "id": l.id,
             "emp_code": l.emp_code,
+            "employee_name":l.employee_name,
             "start": l.start_date.strftime("%Y-%m-%d"),
             "end": l.end_date.strftime("%Y-%m-%d"),
             "days": l.total_days,
