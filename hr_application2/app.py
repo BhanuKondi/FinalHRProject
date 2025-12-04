@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash
 from models.db import db
 
 # ----------------- APP SETUP -----------------
+#auto deployment configured
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile("config.py")
 
