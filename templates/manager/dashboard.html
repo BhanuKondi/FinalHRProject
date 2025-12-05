@@ -1,0 +1,115 @@
+{% extends "manager/manager_base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- CARD -->
+  <div class="card shadow p-4 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+
+      <!-- BUTTONS -->
+      <div>
+        <button id="clockInBtn" class="btn btn-success btn-lg px-4 me-3">Clock In</button>
+        <button id="clockOutBtn" class="btn btn-danger btn-lg px-4">Clock Out</button>
+      </div>
+
+      <!-- TIMER DISPLAY -->
+      <div class="text-center d-flex gap-5 justify-content-center align-items-center">
+        <div>
+          <small class="text-muted">Current Session Time</small>
+          <h1 id="sessionTime" class="fw-bold text-success">00:00:00</h1>
+        </div>
+
+        <div>
+          <small class="text-muted">Total Worked Today</small>
+          <h1 id="totalWorkedTime" class="fw-bold text-primary">00:00:00</h1>
+        </div>
+      </div>
+
+      <div id="statusMessage" class="mt-2 text-info"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+let workTimerInterval = null;
+let previousWorkedSeconds = 0;
+
+/* ---------------- TIMER FUNCTIONS ---------------- */
+function stopWorkTimer() {
+  clearInterval(workTimerInterval);
+  workTimerInterval = null;
+}
+
+function startWorkTimer(clockInISO) {
+  stopWorkTimer();
+  const start = new Date(clockInISO);
+
+  function tick() {
+    const now = new Date();
+    const diff = Math.floor((now - start) / 1000);
+    const total = diff + previousWorkedSeconds;
+
+    document.getElementById("sessionTime").innerText = formatHHMMSS(diff);
+    document.getElementById("totalWorkedTime").innerText = formatHHMMSS(total);
+  }
+
+  tick();
+  workTimerInterval = setInterval(tick, 1000);
+}
+
+function formatHHMMSS(sec) {
+  const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+  const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
+/* ---------------- LOAD SUMMARY ---------------- */
+async function loadTodaySummary() {
+  const res = await fetch("/manager/attendance/today-summary");
+  const data = await res.json();
+  previousWorkedSeconds = data.total_seconds || 0;
+  document.getElementById("totalWorkedTime").innerText = formatHHMMSS(previousWorkedSeconds);
+}
+
+/* ---------------- CURRENT SESSION ---------------- */
+async function loadCurrentSession() {
+  const res = await fetch("/manager/attendance/current");
+  const data = await res.json();
+
+  if (data.active) {
+    startWorkTimer(data.clock_in);
+    document.getElementById("statusMessage").innerText = "You are currently clocked in";
+  } else {
+    stopWorkTimer();
+    document.getElementById("sessionTime").innerText = "00:00:00";
+    document.getElementById("statusMessage").innerText = "You are currently clocked out";
+  }
+}
+
+/* ---------------- BUTTON ACTIONS ---------------- */
+document.getElementById("clockInBtn").addEventListener("click", async () => {
+  await fetch("/manager/attendance/clock_in", { method: "POST" });
+  await loadTodaySummary();
+  await loadCurrentSession();
+});
+
+document.getElementById("clockOutBtn").addEventListener("click", async () => {
+  stopWorkTimer();
+  await fetch("/attendance/clock_out", { method: "POST" });
+  await loadTodaySummary();
+  await loadCurrentSession();
+});
+
+/* ---------------- INITIAL LOAD ---------------- */
+(async function init() {
+  await loadTodaySummary();
+  await loadCurrentSession();
+})();
+});
+</script>
+
+{% endblock %}

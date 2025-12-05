@@ -1,0 +1,21 @@
+/* Sidebar item default */
+.sidebar-item {
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #333;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/* Hover effect */
+.sidebar-item:hover {
+    background-color: #e3f2fd;
+    color: #0d6efd;
+}
+
+/* Active page highlight */
+.sidebar-item.active {
+    background-color: #0d6efd !important;
+    color: white !important;
+    font-weight: bold;
+}
