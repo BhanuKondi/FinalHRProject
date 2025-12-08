@@ -109,7 +109,7 @@ def submit_leave():
         total_days=total_days,
         reason=request.form['reason'],
         employee_name=request.form['employee_name'],
-
+        leave_type=request.form['leave_type'],
         status="PENDING_L1",
         level1_approver_id=level1_approver_user_id,
         level2_approver_id=level2_approver_user_id,
@@ -135,7 +135,8 @@ def my_requests():
             "end": l.end_date.strftime("%Y-%m-%d"),
             "days": l.total_days,
             "reason": l.reason,
-            "status": l.status
+            "status": l.status,
+            "leave_type":l.leave_type
         }
         for l in leaves
     ])
@@ -182,6 +183,7 @@ def my_approvals():
             "days": l.total_days,
             "reason": l.reason,
             "status": l.status,
+            "leave_type":l.leave_type,
             "level1_decision_date": l.level1_decision_date,
             "level2_decision_date": l.level2_decision_date,
         })

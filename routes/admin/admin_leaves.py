@@ -52,6 +52,7 @@ def pending_approvals():
             "start": l.start_date.strftime("%Y-%m-%d"),
             "end": l.end_date.strftime("%Y-%m-%d"),
             "days": l.total_days,
+            "leave_type":l.leave_type,
             "reason": l.reason,
             "status": l.status,
             "level1_decision_date": l.level1_decision_date,
@@ -107,24 +108,54 @@ def leave_summary():
     employees = Employee.query.all()
     summary = []
 
+    TOTAL_CL = 6
+    TOTAL_SL = 6
+
     for e in employees:
-        total_allocated = 20  # default 20 leaves per year
+        emp = e.emp_code
 
-        # sum of total_days for all approved leaves
-        consumed = db.session.query(db.func.coalesce(db.func.sum(Leavee.total_days), 0)) \
-            .filter_by(emp_code=e.emp_code, status="APPROVED").scalar()
+        # CASUAL LEAVE CONSUMED
+        cl_consumed = db.session.query(
+            db.func.coalesce(db.func.sum(Leavee.total_days), 0)
+        ).filter_by(
+            emp_code=emp, status="APPROVED", leave_type="Casual Leave"
+        ).scalar()
 
-        remaining = total_allocated - consumed
+        # SICK LEAVE CONSUMED
+        sl_consumed = db.session.query(
+            db.func.coalesce(db.func.sum(Leavee.total_days), 0)
+        ).filter_by(
+            emp_code=emp, status="APPROVED", leave_type="Sick Leave"
+        ).scalar()
+
+        # LWP
+        lwp = db.session.query(
+            db.func.coalesce(db.func.sum(Leavee.total_days), 0)
+        ).filter_by(
+            emp_code=emp, status="APPROVED", leave_type="Leave Without Pay"
+        ).scalar()
+
+        # Remaining leaves
+        cl_remaining = TOTAL_CL - cl_consumed
+        sl_remaining = TOTAL_SL - sl_consumed
 
         summary.append({
-            "emp_code": e.emp_code,
+            "emp_code": emp,
             "name": f"{e.first_name} {e.last_name}",
-            "total": total_allocated,
-            "consumed": consumed,
-            "remaining": remaining
+
+            "total_casual": TOTAL_CL,
+            "casual_consumed": cl_consumed,
+            "casual_remaining": cl_remaining,
+
+            "total_sick": TOTAL_SL,
+            "sick_consumed": sl_consumed,
+            "sick_remaining": sl_remaining,
+
+            "LWP": lwp
         })
 
     return jsonify(summary)
+
 @admin_lbp.route("/add-holiday", methods=["GET", "POST"])
 def add_holiday():
     if request.method == "POST":

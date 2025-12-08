@@ -56,6 +56,16 @@
                 <label class="form-label">Employee Name</label>
                 <input type="text" class="form-control" value="{{ employee.first_name }} {{employee.last_name}}" name="employee_name" readonly>
             </div>
+             <div class="form-group">
+        <label for="leave_type">Leave Type</label>
+        <select class="form-control" id="leave_type" name="leave_type" required>
+            <option value="" disabled selected>Select Leave Type</option>
+            <option value="Casual Leave">Casual Leave</option>
+            <option value="Sick Leave">Sick Leave</option>
+            <option value="Leave Without Pay">Leave Without Pay</option>
+        </select>
+    </div>
+
 
             <div class="mb-3">
                 <label class="form-label">Start Date</label>
@@ -87,6 +97,7 @@
                     <th>S.No</th>
                     <th>Employee</th>
                     <th>Name</th>
+                    <th>Leave Type</th>
                     <th>Period</th>
                     <th>Days</th>
                     <th>Reason</th>
@@ -113,6 +124,7 @@
                     <th>S.No</th>
                     <th>Period</th>
                     <th>Days</th>
+                    <th>Leave Type</th>
                     <th>Reason</th>
                     <th>Status</th>
                 </tr>
@@ -156,6 +168,7 @@ function loadApprovals() {
                             <td>${i + 1}</td>
                             <td>${l.emp_code}</td>
                             <td>${l.employee_name}</td>
+                            <td>${l.leave_type}</td>
                             <td>${l.start} → ${l.end}</td>
                             <td>${l.days}</td>
                             <td>${l.reason}</td>
@@ -220,6 +233,7 @@ function loadRequests() {
                         <td style="background-color:${bgColor};">${i + 1}</td>
                         <td style="background-color:${bgColor};">${l.start} → ${l.end}</td>
                         <td style="background-color:${bgColor};">${l.days}</td>
+                        <td style="background-color:${bgColor};">${l.leave_type}</td>
                         <td style="background-color:${bgColor};">${l.reason}</td>
                         <td style="background-color:${bgColor}; font-weight:bold;">${displayStatus}</td>
                     </tr>`;

@@ -58,6 +58,7 @@
                     <th>S.No</th>
                     <th>Employee</th>
                     <th>Name</th>
+                    <th>Leave Type</th>
                     <th>Period</th>
                     <th>Days</th>
                     <th>Reason</th>
@@ -79,11 +80,16 @@
         <table class="table table-bordered mt-3">
             <thead>
                 <tr>
-                    <th>S.No</th>
+                        <th>S.No</th>
                     <th>Employee</th>
-                    <th>Total Leaves</th>
-                    <th>Consumed</th>
-                    <th>Remaining</th>
+                    <th>Total CL</th> 
+                    <th>CL Consumed</th>
+    <th>CL Remaining</th>
+
+    <th>Total SL</th>
+    <th>SL Consumed</th>
+    <th>SL Remaining</th>
+<th>LWP</th> 
                 </tr>
             </thead>
             <tbody id="summary-body">
@@ -151,6 +157,7 @@ function loadApprovals() {
                         <td>${i+1}</td>
                         <td>${l.emp_code}</td>
                         <td>${l.employee_name}</td>
+                        <td>${l.leave_type}</td>
                         <td>${l.start} → ${l.end}</td>
                         <td>${l.days}</td>
                         <td>${l.reason}</td>
@@ -182,22 +189,30 @@ function loadSummary() {
         .then(res => res.json())
         .then(data => {
             let html = "";
-            if(data.length === 0){
-                html = `<tr><td colspan="5" class="text-center text-muted">No employees found</td></tr>`;
+            if (data.length === 0) {
+                html = `<tr><td colspan="9" class="text-center text-muted">No employees found</td></tr>`;
             } else {
-                data.forEach((e,i)=>{
+                data.forEach((e, i) => {
                     html += `<tr>
-                        <td>${i+1}</td>
+                        <td>${i + 1}</td>
                         <td>${e.name} (${e.emp_code})</td>
-                        <td>${e.total}</td>
-                        <td>${e.consumed}</td>
-                        <td>${e.remaining}</td>
+
+                        <td>${e.total_casual}</td>
+                        <td>${e.casual_consumed}</td>
+                        <td>${e.casual_remaining}</td>
+
+                        <td>${e.total_sick}</td>
+                        <td>${e.sick_consumed}</td>
+                        <td>${e.sick_remaining}</td>
+
+                        <td>${e.LWP}</td>
                     </tr>`;
                 });
             }
             document.getElementById("summary-body").innerHTML = html;
         });
 }
+
 
 // Show Holidays tab by default
 window.onload = () => showTab('holidays');
