@@ -1,0 +1,25 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}Add Holiday{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-4">Add New Holiday</h2>
+
+    <form method="POST" action="">
+        <div class="mb-3">
+            <label class="form-label">Holiday Name</label>
+            <input type="text" name="occasion" class="form-control" required placeholder="e.g., Independence Day">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Date</label>
+            <input type="date" name="date" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Holiday</button>
+        <a href="{{ url_for('admin_leaves.leave_management') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+</div>
+{% endblock %}

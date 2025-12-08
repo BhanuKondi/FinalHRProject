@@ -1,0 +1,30 @@
+<h2>Pending Leave Requests</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Emp Code</th>
+            <th>Name</th>
+            <th>Dates</th>
+            <th>Total Days</th>
+            <th>Reason</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for r in requests %}
+        <tr>
+            <td>{{ r.employee.emp_code }}</td>
+            <td>{{ r.employee.first_name }} {{ r.employee.last_name }}</td>
+            <td>{{ r.start_date }} - {{ r.end_date }}</td>
+            <td>{{ r.total_days }}</td>
+            <td>{{ r.reason }}</td>
+            <td>
+                <a href="{{ url_for('admin.approve_leave', id=r.id) }}" class="btn btn-success btn-sm">Approve</a>
+                <a href="{{ url_for('admin.reject_leave', id=r.id) }}" class="btn btn-danger btn-sm">Reject</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

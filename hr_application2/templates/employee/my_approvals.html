@@ -1,0 +1,50 @@
+<h3>Pending Approvals</h3>
+
+<h4>Level 1 Approvals</h4>
+<table class="table table-bordered">
+    <tr>
+        <th>Employee</th>
+        <th>Dates</th>
+        <th>Total Days</th>
+        <th>Reason</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for leave in pending_l1 %}
+    <tr>
+        <td>{{ leave.emp_code }}</td>
+        <td>{{ leave.start_date }} - {{ leave.end_date }}</td>
+        <td>{{ leave.total_days }}</td>
+        <td>{{ leave.reason }}</td>
+        <td>
+            <form action="{{ url_for('employee.approve_leave', leave_id=leave.id) }}" method="POST" style="display:inline">
+                <button class="btn btn-success btn-sm">Approve</button>
+            </form>
+            <form action="{{ url_for('employee.reject_leave', leave_id=leave.id) }}" method="POST" style="display:inline">
+                <button class="btn btn-danger btn-sm">Reject</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+<h4>Level 2 Approvals</h4>
+<table class="table table-bordered">
+    {% for leave in pending_l2 %}
+    <tr>
+        <td>{{ leave.emp_code }}</td>
+        <td>{{ leave.start_date }} - {{ leave.end_date }}</td>
+        <td>{{ leave.total_days }}</td>
+        <td>{{ leave.reason }}</td>
+        <td>
+            <form action="{{ url_for('employee.approve_leave', leave_id=leave.id) }}" method="POST" style="display:inline">
+                <button class="btn btn-success btn-sm">Approve</button>
+            </form>
+            <form action="{{ url_for('employee.reject_leave', leave_id=leave.id) }}" method="POST" style="display:inline">
+                <button class="btn btn-danger btn-sm">Reject</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

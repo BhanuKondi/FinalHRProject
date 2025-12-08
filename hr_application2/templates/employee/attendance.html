@@ -1,0 +1,220 @@
+{% extends "employee/employee_base.html" %}
+ 
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold">Attendance Dashboard</h2>
+    <div class="text-end">
+      <div id="digitalClock" class="h3 text-primary"></div>
+      <div class="small text-muted" id="todayDate"></div>
+    </div>
+  </div>
+ 
+  <!-- Attendance Card -->
+  <div class="card shadow p-4 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+ 
+      <!-- Buttons -->
+      <div>
+        <button id="clockInBtn" class="btn btn-success btn-lg px-4 me-3">Clock In</button>
+        <button id="clockOutBtn" class="btn btn-danger btn-lg px-4">Clock Out</button>
+      </div>
+ 
+      <!-- Worked Time Section -->
+      <div class="text-center d-flex gap-5 justify-content-center align-items-center">
+        <div>
+          <small class="text-muted">Current Session Time</small>
+          <h1 id="sessionTime" class="fw-bold text-success">00:00:00</h1>
+        </div>
+        <div>
+          <small class="text-muted">Total Worked Today</small>
+          <h1 id="totalWorkedTime" class="fw-bold text-primary">00:00:00</h1>
+        </div>
+      </div>
+      <div id="statusMessage" class="mt-2 text-info"></div>
+    </div>
+  </div>
+ 
+  <!-- Transactions Card -->
+  <div class="card p-3 shadow-sm">
+    <h5>Today's Transactions</h5>
+ 
+    <!-- FILTER SEARCH START -->
+    <div class="d-flex gap-2 mb-3 align-items-center">
+      <label class="mb-0">From:</label>
+      <input type="date" id="fromDate" class="form-control form-control-sm">
+ 
+      <label class="mb-0">To:</label>
+      <input type="date" id="toDate" class="form-control form-control-sm">
+ 
+      <button id="filterBtn" class="btn btn-primary btn-sm">Filter</button>
+    </div>
+    <!-- FILTER SEARCH END -->
+ 
+    <div class="table-responsive">
+      <table class="table table-sm table-striped" id="txnTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+ 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+ 
+let workTimerInterval = null;
+let previousWorkedSeconds = 0;
+ 
+/* ---------------- DIGITAL CLOCK ---------------- */
+function updateDigitalClock() {
+  const now = new Date();
+  document.getElementById("digitalClock").innerText = now.toLocaleTimeString("en-IN", { hour12: true });
+  document.getElementById("todayDate").innerText = now.toLocaleDateString("en-IN");
+}
+setInterval(updateDigitalClock, 1000);
+updateDigitalClock();
+ 
+/* ---------------- CONTROL BUTTONS ---------------- */
+async function setButtonsFromStatus() {
+  const res = await fetch("/attendance/status");
+  const data = await res.json();
+  document.getElementById("clockInBtn").disabled = data.active;
+  document.getElementById("clockOutBtn").disabled = !data.active;
+}
+ 
+/* ---------------- TIMER FUNCTIONS ---------------- */
+function stopWorkTimer() {
+  clearInterval(workTimerInterval);
+  workTimerInterval = null;
+}
+ 
+function startWorkTimer(clockInISO) {
+  stopWorkTimer();
+  const start = new Date(clockInISO);
+ 
+  function tick() {
+    const now = new Date();
+    const diff = Math.floor((now - start) / 1000);
+    const total = diff + previousWorkedSeconds;
+ 
+    document.getElementById("sessionTime").innerText = formatHHMMSS(diff);
+    document.getElementById("totalWorkedTime").innerText = formatHHMMSS(total);
+  }
+ 
+  tick();
+  workTimerInterval = setInterval(tick, 1000);
+}
+ 
+function formatHHMMSS(sec) {
+  const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+  const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+ 
+/* ---------------- SUMMARY ---------------- */
+async function loadTodaySummary() {
+  const res = await fetch("/attendance/today-summary");
+  const data = await res.json();
+ 
+  previousWorkedSeconds = data.total_seconds || 0;
+  document.getElementById("totalWorkedTime").innerText = formatHHMMSS(previousWorkedSeconds);
+ 
+  const tbody = document.querySelector("#txnTable tbody");
+  tbody.innerHTML = "";
+ 
+  data.transactions.forEach(tx => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${tx.transaction_no}</td>
+      <td>${tx.clock_in}</td>
+      <td>${tx.clock_out}</td>
+      <td>${tx.duration === '-' ? '-' : formatDurationDetail(tx.duration)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+ 
+function formatDurationDetail(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return `${h}h ${m}m ${s}s`;
+}
+ 
+/* ---------------- CURRENT STATUS ---------------- */
+async function loadCurrentSession() {
+  const res = await fetch("/attendance/current");
+  const data = await res.json();
+ 
+  if (data.active) {
+    startWorkTimer(data.clock_in);
+    document.getElementById("statusMessage").innerText = "You are currently clocked in";
+  } else {
+    stopWorkTimer();
+    document.getElementById("sessionTime").innerText = "00:00:00";
+    document.getElementById("statusMessage").innerText = "You are currently clocked out";
+  }
+}
+ 
+/* ---------------- BUTTON ACTIONS ---------------- */
+document.getElementById("clockInBtn").addEventListener("click", async () => {
+  await fetch("/attendance/clock_in", { method: "POST" });
+  await loadTodaySummary();
+  await loadCurrentSession();
+  await setButtonsFromStatus();
+});
+ 
+document.getElementById("clockOutBtn").addEventListener("click", async () => {
+  stopWorkTimer();
+  await fetch("/attendance/clock_out", { method: "POST" });
+  await loadTodaySummary();
+  await loadCurrentSession();
+  await setButtonsFromStatus();
+});
+ 
+/* ---------------- FILTER BUTTON ---------------- */
+document.getElementById("filterBtn").addEventListener("click", async () => {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+ 
+  if (!from || !to) return alert("Please select both From and To dates");
+ 
+  const res = await fetch(`/attendance/filter?from=${from}&to=${to}`);
+  const data = await res.json();
+ 
+  const tbody = document.querySelector("#txnTable tbody");
+  tbody.innerHTML = "";
+ 
+  data.transactions.forEach(tx => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${tx.transaction_no}</td>
+      <td>${tx.clock_in}</td>
+      <td>${tx.clock_out}</td>
+      <td>${tx.duration === '-' ? '-' : formatDurationDetail(tx.duration)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+});
+ 
+/* ---------------- INITIAL LOAD ---------------- */
+(async function init() {
+  await loadTodaySummary();
+  await loadCurrentSession();
+  await setButtonsFromStatus();
+})();
+});
+</script>
+ 
+{% endblock %}
+ 
+ 
