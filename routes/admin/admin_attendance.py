@@ -222,3 +222,51 @@ def monthly_summary(user_id, year, month):
         "late_days": late_days,
         "early_leaves": early_leave_days
     })
+@admin_attendance_bp.route("/list_all_employees/<date_str>")
+def list_all_employees(date_str):
+    """
+    Returns JSON for all employees on the given date.
+    Shows clock_in, clock_out, total worked; absent = 0 hrs (ABSENT)
+    """
+    try:
+        the_date = datetime.fromisoformat(date_str).date()
+    except Exception:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    users = User.query.order_by(User.display_name).all()
+    result = []
+
+    for u in users:
+        records = Attendance.query.filter_by(user_id=u.id, date=the_date).order_by(Attendance.clock_in).all()
+
+        if not records:
+            result.append({
+                "name": u.display_name,
+                "clock_in": "-",
+                "clock_out": "-",
+                "worked": "0:00:00 (ABSENT)"
+            })
+            continue
+
+        first_in = min((r.clock_in for r in records if r.clock_in), default=None)
+        last_out_candidates = [r.clock_out for r in records if r.clock_out]
+        last_out = max(last_out_candidates) if last_out_candidates else None
+
+        total_seconds = sum((r.duration_seconds or 0) for r in records)
+
+        if total_seconds:
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            worked_display = f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
+        else:
+            worked_display = "0:00:00 (ABSENT)"
+
+        result.append({
+            "name": u.display_name,
+            "clock_in": first_in.strftime("%H:%M:%S") if first_in else "-",
+            "clock_out": last_out.strftime("%H:%M:%S") if last_out else "-",
+            "worked": worked_display
+        })
+
+    return jsonify(result)
