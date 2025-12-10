@@ -27,6 +27,9 @@ def dashboard():
 #   EMPLOYEES LIST PAGE
 # ======================================================
 @admin_bp.route("/employees")
+from sqlalchemy import cast, Integer
+
+@admin_bp.route("/employees")
 def employees():
     search = request.args.get("search")
     query = Employee.query
@@ -38,16 +41,16 @@ def employees():
             Employee.work_email.ilike(f"%{search}%")
         )
 
-    #all_employees = query.all()
-    all_employees = query.order_by(Employee.emp_code).all()
+    # Numeric ordering by casting emp_code to integer
+    all_employees = query.order_by(cast(Employee.emp_code, Integer)).all()
 
-    # All managers (users with role_id = 2)
     managers = Employee.query.join(User).filter(User.role_id == 2).all()
 
     return render_template("admin/employees.html",
                            employees=all_employees,
                            search=search,
                            managers=managers)
+
 
 
 # ======================================================
