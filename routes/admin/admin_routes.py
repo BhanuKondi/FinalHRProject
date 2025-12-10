@@ -38,7 +38,8 @@ def employees():
             Employee.work_email.ilike(f"%{search}%")
         )
 
-    all_employees = query.all()
+    #all_employees = query.all()
+    all_employees = query.order_by(Employee.emp_code).all()
 
     # All managers (users with role_id = 2)
     managers = Employee.query.join(User).filter(User.role_id == 2).all()
