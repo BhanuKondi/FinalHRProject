@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash, jsonify
 from models.models import Employee, User, Role,LeaveApprovalConfig
 from models.db import db
+from sqlalchemy import cast, Integer
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -26,9 +27,6 @@ def dashboard():
 # ======================================================
 #   EMPLOYEES LIST PAGE
 # ======================================================
-@admin_bp.route("/employees")
-from sqlalchemy import cast, Integer
-
 @admin_bp.route("/employees")
 def employees():
     search = request.args.get("search")
