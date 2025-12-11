@@ -88,27 +88,43 @@ def api_get_employee(empCode):
 # =============================
 #  3) CREATE EMPLOYEE
 # =============================
-
+# ======================================================
+# CREATE EMPLOYEE (AUTO-GENERATE empCode)
+# ======================================================
 @api_emp.route("/employee", methods=["POST"])
 @basic_auth_required
 def api_create_employee():
+    
+
     data = request.json
 
-    required = ["firstName", "lastName", "email", "empCode"]
-    missing = [f for f in required if f not in data]
-
+    required_fields = [
+        "firstName", "lastName", "email",
+        "phone", "department", "jobTitle", "address",
+        "dateOfJoining", "status", "managerEmpId"
+    ]
+    missing = [f for f in required_fields if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
 
-    # Check duplicate empCode
-    if Employee.query.filter_by(emp_code=data["empCode"]).first():
-        return jsonify({"error": "empCode already exists"}), 400
+    # ================================================
+    # AUTO-GENERATE EMP CODE (increment last one)
+    # ================================================
+    last_emp = Employee.query.order_by(Employee.emp_code.desc()).first()
 
-    # Check duplicate email
+    if last_emp:
+        try:
+            new_emp_code = str(int(last_emp.emp_code) + 1)
+        except:
+            return jsonify({"error": "Invalid empCode format in DB"}), 500
+    else:
+        new_emp_code = "1"  # First employee
+
+    # Check email duplicate
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "Email already exists"}), 400
 
-    # Create User
+    # Create user account
     user = User(
         email=data["email"],
         display_name=f"{data['firstName']} {data['lastName']}",
@@ -116,24 +132,23 @@ def api_create_employee():
         is_active=True
     )
     user.set_password("Temp@123")
-
     db.session.add(user)
     db.session.commit()
 
-    # Create Employee record
+    # Create employee record
     emp = Employee(
-        emp_code=data["empCode"],
+        emp_code=new_emp_code,
         first_name=data["firstName"],
         last_name=data["lastName"],
         work_email=data["email"],
-        phone=data.get("phone"),
-        address=data.get("address"),
-        date_of_joining=data.get("dateOfJoining"),
-        department=data.get("department"),
-        job_title=data.get("jobTitle"),
-        status=data.get("status", "Active"),
-        user_id=user.id,
-        manager_emp_id=data.get("managerEmpId")
+        phone=data["phone"],
+        address=data["address"],
+        department=data["department"],
+        job_title=data["jobTitle"],
+        status=data["status"],
+        date_of_joining=data["dateOfJoining"],
+        manager_emp_id=data["managerEmpId"],
+        user_id=user.id
     )
 
     db.session.add(emp)
@@ -141,9 +156,9 @@ def api_create_employee():
 
     return jsonify({
         "message": "Employee created successfully",
+        "generatedEmpCode": new_emp_code,
         "employee": serialize_employee(emp)
     }), 201
-
 
 # =============================
 #  4) DELETE EMPLOYEE BY empCode
@@ -165,3 +180,49 @@ def api_delete_employee(empCode):
     db.session.commit()
 
     return jsonify({"message": "Employee deleted successfully"}), 200
+# =============================
+#  5) ENABLE EMPLOYEE
+# =============================
+@api_emp.route("/employee/<string:empCode>/enable", methods=["PUT"])
+@basic_auth_required
+def api_enable_employee(empCode):
+    emp = Employee.query.filter_by(emp_code=empCode).first()
+
+    if not emp:
+        return jsonify({"error": "Employee not found"}), 404
+
+    emp.status = "Active"
+
+    if emp.user:
+        emp.user.is_active = True
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Employee enabled successfully",
+        "employee": serialize_employee(emp)
+    }), 200
+
+
+# =============================
+#  6) DISABLE EMPLOYEE
+# =============================
+@api_emp.route("/employee/<string:empCode>/disable", methods=["PUT"])
+@basic_auth_required
+def api_disable_employee(empCode):
+    emp = Employee.query.filter_by(emp_code=empCode).first()
+
+    if not emp:
+        return jsonify({"error": "Employee not found"}), 404
+
+    emp.status = "Inactive"
+
+    if emp.user:
+        emp.user.is_active = False
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Employee disabled successfully",
+        "employee": serialize_employee(emp)
+    }), 200
