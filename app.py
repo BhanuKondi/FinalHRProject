@@ -74,7 +74,7 @@ from routes.admin.admin_leaves import admin_lbp
 from routes.manager.manager_leaves import manager_lbp
 # Settings routes
 from routes.settings.settings import settings_bp
-from routes.api_employees import api_emp
+from routes.app_employees import api_emp
 
 # ----------------- BLUEPRINT REGISTRATION -----------------
 # Auth
