@@ -74,6 +74,7 @@ from routes.admin.admin_leaves import admin_lbp
 from routes.manager.manager_leaves import manager_lbp
 # Settings routes
 from routes.settings.settings import settings_bp
+from routes.api_employees import api_emp
 
 # ----------------- BLUEPRINT REGISTRATION -----------------
 # Auth
@@ -101,6 +102,7 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(employee_lbp)
 app.register_blueprint(admin_lbp)
 app.register_blueprint(manager_lbp)
+app.register_blueprint(api_emp)
 
 # ----------------- DEFAULT ROUTE -----------------
 @app.route("/")
