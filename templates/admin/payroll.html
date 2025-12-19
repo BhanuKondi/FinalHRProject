@@ -1,0 +1,101 @@
+{% extends "admin/admin_base.html" %}
+{% block content %}
+
+<h3 class="fw-bold mb-4">Payroll Management</h3>
+
+<!-- ================= Generate Pay Run ================= -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin_payroll.generate_payrun') }}">
+            <div class="row g-3 align-items-end">
+
+                <!-- Month Picker -->
+                <div class="col-md-6">
+                    <label class="form-label">Payroll Month</label>
+                    <input type="month"
+                           name="pay_month"
+                           class="form-control"
+                           value="{{ selected_year | default('') }}{% if selected_month is defined %}-{{ '%02d' % selected_month }}{% endif %}"
+
+                           required>
+                </div>
+
+                <!-- Button -->
+                <div class="col-md-6">
+                    <button class="btn btn-primary w-100 mt-4">
+                        Generate Pay Run
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if payroll_data %}
+
+<!-- ================= Payroll Approval Section ================= -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">
+        Payroll for {{ selected_month }}/{{ selected_year }}
+    </h5>
+
+    {% if payroll_approved %}
+        <span class="badge bg-success fs-6">
+            ✔ Payroll Approved
+        </span>
+    {% else %}
+        <form method="POST"
+              action="{{ url_for('admin_payroll.approve_payrun') }}">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <input type="hidden" name="year" value="{{ selected_year }}">
+            <button class="btn btn-success">
+                Approve Payroll
+            </button>
+        </form>
+    {% endif %}
+</div>
+
+<!-- ================= Payroll Table ================= -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Emp Code</th>
+                    <th>Name</th>
+                    <th>Salary Month</th>
+                    <th class="text-end">Monthly Salary</th>
+                    <th>Total Working Days</th>
+                    <th>Present Days</th>
+                    <th>Absent Days</th>
+                    <th class="text-center">LWP Days</th>
+                    <th>LWP deduction</th>
+                    <th>Net Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in payroll_data %}
+                <tr>
+                    <td>{{ row.emp_code }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.salary_month }}</td>
+                    <td>{{ row.gross_salary }}</td>
+                    <td>{{row.total_working_days}}</td>
+                    <td>{{row.present_days}}</td>
+                    <td>{{row.absent_days}}</td>
+                    
+                    <td >{{ row.lwp_days}} </td>
+                    <td>{{row.lwp_deduction}}</td>
+                    <td>{{row.net_salary}}</td>
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

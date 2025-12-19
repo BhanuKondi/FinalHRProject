@@ -2,14 +2,19 @@
 from flask import Blueprint, render_template, jsonify, request
 from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
-from models.models import User
+from models.models import User,Leavee
 from models.attendance import Attendance
 from sqlalchemy import func, and_
 from calendar import monthrange
+import io
+import csv
+from flask import Response
 
 admin_attendance_bp = Blueprint("admin_attendance_bp", __name__, url_prefix="/admin/attendance")
 IST = ZoneInfo("Asia/Kolkata")
-
+@admin_attendance_bp.route("/reports")
+def attendance_reports_page():
+    return render_template("admin/reports.html")
 # Helper: format seconds to HH:MM:SS
 def fmt_seconds(sec):
     sec = int(sec or 0)
@@ -270,3 +275,82 @@ def list_all_employees(date_str):
         })
 
     return jsonify(result)
+@admin_attendance_bp.route("/reports/download_summary")
+def download_monthly_attendance_summary_csv():
+    month_str = request.args.get("month")  # format: YYYY-MM
+    if not month_str:
+        return jsonify({"error": "month parameter required"}), 400
+ 
+    try:
+        year, month = map(int, month_str.split("-"))
+    except Exception:
+        return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
+ 
+    from calendar import monthrange
+    _, days_in_month = monthrange(year, month)
+    start_date = date(year, month, 1)
+ 
+    # Prepare list of weekdays (Mon-Fri)
+    weekdays = [start_date + timedelta(days=i) for i in range(days_in_month)
+                if (start_date + timedelta(days=i)).weekday() < 5]
+ 
+    users = User.query.order_by(User.display_name).all()
+ 
+    # In-memory CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Employee",
+        "Total Working Days",
+        "Days Present",
+        "Leaves Applied",
+        "Worked Hours",
+        "Status"
+    ])
+ 
+    for u in users:
+        if not u.employee:
+            continue  # Skip users without employee records
+ 
+        total_working_days = len(weekdays)
+        days_present = 0
+        leaves_applied = 0
+        total_worked_seconds = 0
+ 
+        for day in weekdays:
+            # Attendance records for this day
+            records = Attendance.query.filter_by(user_id=u.id, date=day).all()
+            day_seconds = sum((r.duration_seconds or 0) for r in records)
+            total_worked_seconds += day_seconds
+ 
+            # Check if present
+            if day_seconds >= 6 * 3600:  # 6 hours
+                days_present += 1
+ 
+            # Check leave
+            leave = Leavee.query.filter(
+                Leavee.emp_code == u.employee.emp_code,
+                Leavee.start_date <= day,
+                Leavee.end_date >= day,
+                Leavee.status == "Approved"
+            ).first()
+            if leave:
+                leaves_applied += 1
+ 
+        # Status: if total worked seconds in month ≥ 6 hours/day * total_working_days → PRESENT else ABSENT
+        status = "PRESENT" if total_worked_seconds >= 6 * 3600 else "ABSENT"
+ 
+        writer.writerow([
+            u.display_name,
+            total_working_days,
+            days_present,
+            leaves_applied,
+            fmt_seconds(total_worked_seconds),
+            status
+        ])
+ 
+    output.seek(0)
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=attendance_summary_{month_str}.csv"})

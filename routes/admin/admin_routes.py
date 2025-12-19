@@ -1,135 +1,126 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash, jsonify
-from models.models import Employee, User, Role,LeaveApprovalConfig
+from models.models import (
+    Employee,
+    User,
+    Role,
+    LeaveApprovalConfig,
+    EmployeeSalary,
+    EmployeeAccount
+)
 from models.db import db
-
+from sqlalchemy import cast, Integer
+from datetime import datetime   # ✅ REQUIRED
+ 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
-
-# ======================================================
-#   ADMIN ACCESS CHECK
-# ======================================================
+ 
+# =====================================================
+# ADMIN ACCESS CHECK
+# =====================================================
 @admin_bp.before_request
 def check_admin():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    if session.get('role_id') != 1:  # Admin = 1
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+    if session.get("role_id") != 1:
         return "Access denied", 403
-
-
-# ======================================================
-#   ADMIN DASHBOARD
-# ======================================================
+ 
+ 
+# =====================================================
+# DASHBOARD
+# =====================================================
 @admin_bp.route("/dashboard")
 def dashboard():
     return render_template("admin/dashboard.html")
-
-
-# ======================================================
-#   EMPLOYEES LIST PAGE
-# ======================================================
+ 
+ 
+# =====================================================
+# EMPLOYEES LIST
+# =====================================================
 @admin_bp.route("/employees")
 def employees():
-    search = request.args.get("search")
-    query = Employee.query
-
-    if search:
-        query = query.filter(
-            Employee.first_name.ilike(f"%{search}%") |
-            Employee.last_name.ilike(f"%{search}%") |
-            Employee.work_email.ilike(f"%{search}%")
-        )
-
-    all_employees = query.all()
-
-    # All managers (users with role_id = 2)
-    managers = Employee.query.join(User).filter(User.role_id == 2).all()
-
-    return render_template("admin/employees.html",
-                           employees=all_employees,
-                           search=search,
-                           managers=managers)
-
-
-# ======================================================
-#   ADD EMPLOYEE
-# ======================================================
+    employees = Employee.query.order_by(cast(Employee.emp_code, Integer)).all()
+    return render_template("admin/employees.html", employees=employees)
+ 
+ 
+# =====================================================
+# ADD EMPLOYEE
+# =====================================================
 @admin_bp.route("/employees/add", methods=["POST"])
 def add_employee():
-    first_name = request.form.get("first_name")
-    last_name = request.form.get("last_name")
-    work_email = request.form.get("work_email")
-    emp_code = request.form.get("emp_code")
-    role_id = int(request.form.get("role_id"))
-    temp_password = request.form.get("password")
-
-    # Manager selection
-    manager_emp_id = request.form.get("manager_emp_id")
-    manager_emp_id = int(manager_emp_id) if manager_emp_id else None
-
-    # VALIDATION
-    if User.query.filter_by(email=work_email).first():
-        flash("Email already exists!", "danger")
-        return redirect(url_for("admin.employees"))
-
-    if Employee.query.filter_by(emp_code=emp_code).first():
-        flash("Employee code already exists!", "danger")
-        return redirect(url_for("admin.employees"))
-
-    # CREATE USER
-    user = User(
-        email=work_email,
-        display_name=f"{first_name} {last_name}",
-        role_id=role_id,
-        must_change_password=True,
-        is_active=True     # NEW: Active user access
-    )
-    user.set_password(temp_password)
-    db.session.add(user)
-    db.session.commit()
-
-    # CREATE EMPLOYEE
-    emp = Employee(
-        emp_code=emp_code,
-        first_name=first_name,
-        last_name=last_name,
-        work_email=work_email,
-        phone=request.form.get("phone"),
-        address=request.form.get("address"),
-        date_of_joining=request.form.get("date_of_joining"),
-        department=request.form.get("department"),
-        job_title=request.form.get("job_title"),
-        status="Active",
-        user_id=user.id,
-        manager_emp_id=manager_emp_id
-    )
-
-    db.session.add(emp)
-    db.session.commit()
-
-    flash(f"Employee {first_name} added successfully.", "success")
+    try:
+        # ---------- USER ----------
+        user = User(
+            email=request.form.get("work_email"),
+            display_name=f"{request.form.get('first_name')} {request.form.get('last_name')}",
+            role_id=int(request.form.get("role_id")),
+            must_change_password=True,
+            is_active=True  # ✅ IMPORTANT
+        )
+        user.set_password(request.form.get("password"))
+        db.session.add(user)
+        db.session.flush()
+ 
+        # ---------- EMPLOYEE ----------
+        emp = Employee(
+            emp_code=request.form.get("emp_code"),
+            first_name=request.form.get("first_name"),
+            last_name=request.form.get("last_name"),
+            work_email=request.form.get("work_email"),
+            phone=request.form.get("phone"),
+            department=request.form.get("department"),
+            job_title=request.form.get("job_title"),
+            date_of_joining=request.form.get("date_of_joining"),
+            status="Active",
+            user_id=user.id
+        )
+        db.session.add(emp)
+        db.session.flush()
+ 
+        # ---------- SALARY ----------
+        salary = EmployeeSalary(
+            employee_id=emp.id,
+            gross_salary=float(request.form.get("ctc", 0)),
+            basic_percent=float(request.form.get("basic_percent", 50)),
+            hra_percent=float(request.form.get("hra_percent", 20)),
+            fixed_allowance=float(request.form.get("fixed_allowance", 4532)),
+            medical_fixed=float(request.form.get("medical_fixed", 1000)),
+            driver_reimbursement=float(request.form.get("driver_reimbursement", 1000)),
+            epf_percent=float(request.form.get("epf_percent", 12)),
+            total_deductions=0,
+            net_salary=float(request.form.get("ctc", 0))
+        )
+        db.session.add(salary)
+ 
+        # ---------- BANK ACCOUNT ----------
+        account = EmployeeAccount(
+            employee_id=emp.id,
+            bank_name=request.form.get("bank_name"),
+            account_number=request.form.get("account_number"),
+            ifsc_code=request.form.get("ifsc_code"),
+            account_holder_name=request.form.get("account_holder_name")
+        )
+        db.session.add(account)
+ 
+        db.session.commit()
+        flash("Employee added successfully", "success")
+ 
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        flash(str(e), "danger")
+ 
     return redirect(url_for("admin.employees"))
-
-
-# ======================================================
-#   VIEW EMPLOYEE (AJAX)
-# ======================================================
+ 
+ 
+# =====================================================
+# VIEW EMPLOYEE (JSON)
+# =====================================================
 @admin_bp.route("/employees/view/<int:id>")
 def view_employee(id):
-    emp = Employee.query.get(id)
-    if not emp:
-        return jsonify({"error": "Employee not found"}), 404
-
-    manager = None
-    if emp.manager_emp_id:
-        mgr = Employee.query.get(emp.manager_emp_id)
-        if mgr:
-            manager = {
-                "id": mgr.id,
-                "name": f"{mgr.first_name} {mgr.last_name}",
-                "email": mgr.work_email
-            }
-
+    emp = Employee.query.get_or_404(id)
+    salary = EmployeeSalary.query.filter_by(employee_id=id).first()
+    account = EmployeeAccount.query.filter_by(employee_id=id).first()
+ 
     return jsonify({
-        "id": emp.id,
         "emp_code": emp.emp_code,
         "first_name": emp.first_name,
         "last_name": emp.last_name,
@@ -137,109 +128,124 @@ def view_employee(id):
         "phone": emp.phone,
         "department": emp.department,
         "job_title": emp.job_title,
-        "address": emp.address,
         "date_of_joining": str(emp.date_of_joining),
-        "status": emp.status,
-        "manager": manager
+        "status": emp.status,  # ✅ FIXED
+        "role_id": emp.user.role_id if emp.user else None,
+        "role_name": emp.user.role.name if emp.user and emp.user.role else "",
+ 
+        "salary": {
+            "gross_salary": salary.gross_salary if salary else 0,
+            "basic_percent": salary.basic_percent if salary else 0,
+            "hra_percent": salary.hra_percent if salary else 0,
+            "fixed_allowance": salary.fixed_allowance if salary else 0,
+            "medical_fixed": salary.medical_fixed if salary else 0,
+            "driver_reimbursement": salary.driver_reimbursement if salary else 0,
+            "epf_percent": salary.epf_percent if salary else 0
+        },
+ 
+        "account": {
+            "bank_name": account.bank_name if account else "",
+            "account_number": account.account_number if account else "",
+            "ifsc_code": account.ifsc_code if account else "",
+            "account_holder_name": account.account_holder_name if account else ""
+        }
     })
-
-
-# ======================================================
-#   EDIT EMPLOYEE
-# ======================================================
+ 
+ 
+# =====================================================
+# EDIT EMPLOYEE
+# =====================================================
 @admin_bp.route("/employees/edit/<int:id>", methods=["POST"])
 def edit_employee(id):
-    emp = Employee.query.get(id)
-    if not emp:
-        flash("Employee not found", "danger")
-        return redirect(url_for("admin.employees"))
-
-    work_email = request.form.get("work_email")
-    emp_code = request.form.get("emp_code")
-
-    # VALIDATION - email unique
-    if User.query.filter(User.email == work_email, User.id != emp.user_id).first():
-        flash("Email already exists!", "danger")
-        return redirect(url_for("admin.employees"))
-
-    # VALIDATION - emp code unique
-    if Employee.query.filter(Employee.emp_code == emp_code, Employee.id != id).first():
-        flash("Employee code already exists!", "danger")
-        return redirect(url_for("admin.employees"))
-
-    # BASIC FIELDS
+    emp = Employee.query.get_or_404(id)
+ 
+    # ---------- BASIC ----------
     emp.first_name = request.form.get("first_name")
     emp.last_name = request.form.get("last_name")
-    emp.work_email = work_email
+    emp.work_email = request.form.get("work_email")
     emp.phone = request.form.get("phone")
     emp.department = request.form.get("department")
     emp.job_title = request.form.get("job_title")
-    emp.address = request.form.get("address")
-    emp.status = request.form.get("status")
-
-    # UPDATE MANAGER
-    manager_emp_id = request.form.get("manager_emp_id")
-    emp.manager_emp_id = int(manager_emp_id) if manager_emp_id else None
-
-    # UPDATE USER ALSO
-    user = User.query.get(emp.user_id)
+ 
+    # 🔥 STATUS SYNC (MOST IMPORTANT PART)
+    new_status = request.form.get("status")
+    emp.status = new_status
+ 
+    user = emp.user
     if user:
-        user.email = work_email
-        user.display_name = f"{emp.first_name} {emp.last_name}"
-
-        # Disable user login when terminated
-        if emp.status == "Terminated" or emp.status == "Inactive":
-            user.is_active = False
-        else:
+        user.status = new_status
+        if new_status == "Active":
             user.is_active = True
-
+            user.status_date = None
+        else:
+            user.is_active = False
+            user.status_date = datetime.utcnow().date()
+ 
+    # ---------- SALARY ----------
+    salary = EmployeeSalary.query.filter_by(employee_id=id).first()
+    if not salary:
+        salary = EmployeeSalary(employee_id=id)
+        db.session.add(salary)
+ 
+    salary.gross_salary = float(request.form.get("ctc", 0))
+    salary.basic_percent = float(request.form.get("basic_percent", 50))
+    salary.hra_percent = float(request.form.get("hra_percent", 20))
+    salary.fixed_allowance = float(request.form.get("fixed_allowance", 4532))
+    salary.medical_fixed = float(request.form.get("medical_fixed", 1000))
+    salary.driver_reimbursement = float(request.form.get("driver_reimbursement", 1000))
+    salary.epf_percent = float(request.form.get("epf_percent", 12))
+    salary.net_salary = salary.gross_salary
+ 
+    # ---------- ACCOUNT ----------
+    account = EmployeeAccount.query.filter_by(employee_id=id).first()
+    if not account:
+        account = EmployeeAccount(employee_id=id)
+        db.session.add(account)
+ 
+    account.bank_name = request.form.get("bank_name")
+    account.account_number = request.form.get("account_number")
+    account.ifsc_code = request.form.get("ifsc_code")
+    account.account_holder_name = request.form.get("account_holder_name")
+ 
     db.session.commit()
-    flash("Employee updated successfully.", "success")
+    flash("Employee updated successfully", "success")
     return redirect(url_for("admin.employees"))
-
+ 
+ 
+# =====================================================
+# CONFIGURE LEAVE APPROVALS
+# =====================================================
 @admin_bp.route("/configure-approvals", methods=["GET", "POST"])
 def configure_approvals():
-    if session.get("role_id") != 1:
-        return "Access denied", 403
-
     users = User.query.all()
-
     config = LeaveApprovalConfig.query.first()
+ 
     if not config:
         config = LeaveApprovalConfig()
         db.session.add(config)
         db.session.commit()
-
+ 
     if request.method == "POST":
-        level1_value = request.form.get("level1")
-        level2_value = request.form.get("level2")
-
-        # -----------------------------
-        # 🔥 LEVEL 1 APPROVER LOGIC
-        # -----------------------------
-        if level1_value == "MANAGER":
-            config.use_manager_l1 = True     # we use manager
-            config.level1_approver_id = None # FK must be null
+        level1 = request.form.get("level1")
+        level2 = request.form.get("level2")
+ 
+        if level1 == "MANAGER":
+            config.use_manager_l1 = True
+            config.level1_approver_id = None
         else:
             config.use_manager_l1 = False
-            config.level1_approver_id = (
-                int(level1_value) if level1_value else None
-            )
-
-        # -----------------------------
-        # LEVEL 2 APPROVER (normal)
-        # -----------------------------
-        config.level2_approver_id = (
-            int(level2_value) if level2_value else None
-        )
-
+            config.level1_approver_id = int(level1) if level1 else None
+ 
+        config.level2_approver_id = int(level2) if level2 else None
+ 
         db.session.commit()
-
         flash("Approval workflow updated successfully!", "success")
         return redirect(url_for("admin.configure_approvals"))
-
+ 
     return render_template(
         "admin/configure_approvals.html",
         users=users,
         config=config
     )
+ 
+ 

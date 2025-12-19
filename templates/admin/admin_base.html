@@ -62,16 +62,30 @@
     </a>
 </li>
 
-            <li class="nav-item dropdown">
+         
+<li class="nav-item">
+    <a href="{{ url_for('admin_payroll.payroll_dashboard') }}"
+       class="nav-link sidebar-item {% if '/admin/payroll' in request.path %}active{% endif %}">
+        Payroll Management
+    </a>
+</li>
+<li class="nav-item">
+    <a href="{{ url_for('admin_attendance_bp.attendance_reports_page') }}"
+       class="nav-link sidebar-item
+       {% if '/admin/attendance/reports' in request.path %}active{% endif %}">
+        Reports
+    </a>
+</li>
+   <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" 
        role="button" data-bs-toggle="dropdown" aria-expanded="false">
         Settings
     </a>
     <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
         <li><a class="dropdown-item" href="{{ url_for('admin.configure_approvals') }}">Configure Approvals</a></li>
+        
     </ul>
 </li>
-
         </ul>
     </div>
 

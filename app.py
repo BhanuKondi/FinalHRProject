@@ -74,7 +74,10 @@ from routes.admin.admin_leaves import admin_lbp
 from routes.manager.manager_leaves import manager_lbp
 # Settings routes
 from routes.settings.settings import settings_bp
-
+from routes.api_employees import api_emp
+from routes.admin.admin_payroll_routes import admin_payroll_bp
+from routes.employee.employee_payroll import employee_payroll_bp
+app.register_blueprint(admin_payroll_bp)
 # ----------------- BLUEPRINT REGISTRATION -----------------
 # Auth
 app.register_blueprint(auth_bp)
@@ -101,6 +104,11 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(employee_lbp)
 app.register_blueprint(admin_lbp)
 app.register_blueprint(manager_lbp)
+app.register_blueprint(api_emp)
+
+
+app.register_blueprint(employee_payroll_bp)
+
 
 # ----------------- DEFAULT ROUTE -----------------
 @app.route("/")

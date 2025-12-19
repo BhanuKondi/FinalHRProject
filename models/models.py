@@ -69,6 +69,8 @@ class Employee(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    salary = db.relationship("EmployeeSalary", backref="employee", uselist=False)
+    account = db.relationship("EmployeeAccount", backref="employee", uselist=False)
 
     # 👇 OPTIONAL — only if you want attendance per employee also
     #attendance_records = db.relationship("Attendance", backref="employee", lazy=True)
@@ -121,9 +123,56 @@ class Leavee(db.Model):
     current_approver_id = db.Column(db.Integer, nullable=True)
     level1_decision_date = db.Column(db.DateTime, nullable=True)
     level2_decision_date = db.Column(db.DateTime, nullable=True)
-    
-    # ✅ New column for leave type
     leave_type = db.Column(db.String(30), nullable=False)  # Casual Leave, Sick Leave, Leave Without Pay
 
+
+class EmployeeSalary(db.Model):
+    __tablename__ = "employee_salary"
+ 
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), unique=True)
+ 
+    # Earnings
+    basic_percent = db.Column(db.Float, default=50)
+    hra_percent = db.Column(db.Float, default=20)
+    fixed_allowance = db.Column(db.Float, default=4532)
+ 
+    # Reimbursements
+    medical_fixed = db.Column(db.Float, default=1000)
+    driver_reimbursement = db.Column(db.Float, default=1000)
+ 
+    # Deductions
+    epf_percent = db.Column(db.Float, default=12)
+ 
+    # Salary totals
+    gross_salary = db.Column(db.Float, nullable=False)
+    total_deductions = db.Column(db.Float, default=0)
+    net_salary = db.Column(db.Float, nullable=False)
+ 
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+ 
+ 
+# ------------------- Employee Bank Account -----------------
+class EmployeeAccount(db.Model):
+    __tablename__ = "employee_account"
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), unique=True)
+    bank_name = db.Column(db.String(100))
+    account_number = db.Column(db.String(30))
+    ifsc_code = db.Column(db.String(15))
+    account_holder_name = db.Column(db.String(100))
+class PayrollRun(db.Model):
+    __tablename__ = "payroll_run"
+
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+
+    approved = db.Column(db.Boolean, default=False)
+    approved_at = db.Column(db.DateTime)
+
+    __table_args__ = (
+        db.UniqueConstraint('month', 'year', name='uq_payroll_run_month_year'),
+    )
 
 from models.attendance import Attendance
