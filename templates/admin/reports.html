@@ -4,14 +4,16 @@
 <div class="container mt-4">
     <h3 class="fw-bold mb-3">Attendance Reports</h3>
  
-    <div class="card shadow-sm">
+    <!-- FILTER -->
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="GET" action="{{ url_for('admin_attendance_bp.download_monthly_attendance_summary_csv') }}">
+            <form method="GET"
+                  action="{{ url_for('admin_attendance_bp.download_monthly_attendance_summary_csv') }}">
                 <div class="row g-3 align-items-end">
  
                     <div class="col-md-4">
                         <label class="form-label">Select Month</label>
-                        <input type="month" name="month" class="form-control" required>
+                        <input type="month" id="monthInput" name="month" class="form-control" required>
                     </div>
  
                     <div class="col-md-4">
@@ -24,6 +26,90 @@
             </form>
         </div>
     </div>
+ 
+    <!-- TABLE -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-semibold mb-3">Monthly Attendance Summary</h5>
+ 
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Emp Code</th>
+                            <th>Employee Name</th>
+                            <th>Total Working Days</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>LWP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                Select a month to load data
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+ 
+<script>
+const monthInput = document.getElementById("monthInput");
+const tableBody = document.getElementById("attendanceTableBody");
+ 
+monthInput.addEventListener("change", function () {
+    const month = this.value;
+    if (!month) return;
+ 
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center">Loading...</td>
+        </tr>
+    `;
+ 
+    fetch(`{{ url_for('admin_attendance_bp.get_monthly_attendance_summary_json') }}?month=${month}`)
+        .then(res => res.json())
+        .then(data => {
+            tableBody.innerHTML = "";
+ 
+            if (data.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No data found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+ 
+            data.forEach(row => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${row.emp_code}</td>
+                        <td>${row.employee_name}</td>
+                        <td>${row.total_working_days}</td>
+                        <td>${row.present_days}</td>
+                        <td>${row.absent_days}</td>
+                        <td>${row.lwp_days}</td>
+                    </tr>
+                `;
+            });
+        })
+        .catch(() => {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-danger">
+                        Failed to load data
+                    </td>
+                </tr>
+            `;
+        });
+});
+</script>
  
 {% endblock %}

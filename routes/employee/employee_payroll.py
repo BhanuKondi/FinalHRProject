@@ -190,9 +190,9 @@ def download_payslip():
         "lwp_deduction": lwp_deduction,
         "net_pay": net_salary,
         "amount_in_words": number_to_words(net_salary),
-        "basic":salary.basic_percent,
+        "basic":salary.basic_percent *100,
         "hra":salary.hra_percent,
-        "fixed_allowance":salary.fixed_allowance,
+        "fixed_allowance":salary.fixed_allowance *100,
         "absent_days":absent_days
     }
 
