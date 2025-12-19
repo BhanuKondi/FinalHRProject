@@ -114,11 +114,15 @@ def add_employee():
 # =====================================================
 # VIEW EMPLOYEE (JSON)
 # =====================================================
-@admin_bp.route("/employees/view/<int:id>")
+'''@admin_bp.route("/employees/view/<int:id>")
 def view_employee(id):
     emp = Employee.query.get_or_404(id)
-    salary = EmployeeSalary.query.filter_by(emp_code=id).first()
-    account = EmployeeAccount.query.filter_by(emp_code=id).first()
+    '''
+@admin_bp.route("/employees/view/<string:emp_code>")
+def view_employee(emp_code):
+    emp = Employee.query.filter_by(emp_code=emp_code).first_or_404()
+    salary = EmployeeSalary.query.filter_by(emp_code=emp_code).first()
+    account = EmployeeAccount.query.filter_by(emp_code=emp_code).first()
  
     return jsonify({
         "emp_code": emp.emp_code,
@@ -155,10 +159,13 @@ def view_employee(id):
 # =====================================================
 # EDIT EMPLOYEE
 # =====================================================
-@admin_bp.route("/employees/edit/<int:id>", methods=["POST"])
+'''@admin_bp.route("/employees/edit/<int:id>", methods=["POST"])
 def edit_employee(id):
     emp = Employee.query.get_or_404(id)
- 
+    '''
+@admin_bp.route("/employees/edit/<string:emp_code>")
+def edit_employee(emp_code):
+    emp = Employee.query.filter_by(emp_code=emp_code).first_or_404()
     # ---------- BASIC ----------
     emp.first_name = request.form.get("first_name")
     emp.last_name = request.form.get("last_name")
@@ -182,9 +189,9 @@ def edit_employee(id):
             user.status_date = datetime.utcnow().date()
  
     # ---------- SALARY ----------
-    salary = EmployeeSalary.query.filter_by(employee_id=id).first()
+    salary = EmployeeSalary.query.filter_by(emp_code=emp_code).first()
     if not salary:
-        salary = EmployeeSalary(employee_id=id)
+        salary = EmployeeSalary(emp_code=emp_code)
         db.session.add(salary)
  
     salary.gross_salary = float(request.form.get("ctc", 0))
