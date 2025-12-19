@@ -130,7 +130,7 @@ class EmployeeSalary(db.Model):
     __tablename__ = "employee_salary"
  
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), unique=True)
+    emp_code = db.Column(db.Integer, db.ForeignKey("employees.emp_code"), unique=True)
  
     # Earnings
     basic_percent = db.Column(db.Float, default=50)
@@ -156,7 +156,7 @@ class EmployeeSalary(db.Model):
 class EmployeeAccount(db.Model):
     __tablename__ = "employee_account"
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey("employees.id"), unique=True)
+    emp_code = db.Column(db.Integer, db.ForeignKey("employees.emp_code"), unique=True)
     bank_name = db.Column(db.String(100))
     account_number = db.Column(db.String(30))
     ifsc_code = db.Column(db.String(15))
