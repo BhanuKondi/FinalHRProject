@@ -60,7 +60,7 @@ def generate_payrun():
     employees = Employee.query.filter(Employee.status == "Active").all()
 
     for emp in employees:
-        salary = EmployeeSalary.query.filter_by(employee_id=emp.id).first()
+        salary = EmployeeSalary.query.filter_by(emp_code=emp.emp_code).first()
         if not salary:
             continue
 
