@@ -84,8 +84,8 @@ def download_payslip():
         flash("Payslip not available yet. Payroll not approved.", "warning")
         return redirect(url_for("employee_payroll.payslip_page"))
 
-    salary = EmployeeSalary.query.filter_by(employee_id=emp.id).first()
-    account = EmployeeAccount.query.filter_by(employee_id=emp.id).first()
+    salary = EmployeeSalary.query.filter_by(emp_code=emp.emp_code).first()
+    account = EmployeeAccount.query.filter_by(emp_code=emp.emp_code).first()
 
     if not salary:
         flash("Salary details not found.", "danger")
