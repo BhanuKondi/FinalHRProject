@@ -33,8 +33,8 @@
                 <span class="badge {% if emp.status == 'Active' %}bg-success{% elif emp.status == 'Inactive' %}bg-secondary{% else %}bg-danger{% endif %}">{{ emp.status }}</span>
             </td>
             <td>
-                <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#viewEmployeeModal" onclick="openViewEmployee({{ emp.id }})">View</button>
-                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" onclick="openEditEmployee({{ emp.id }})">Edit</button>
+                <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#viewEmployeeModal" onclick="openViewEmployee({{ emp.emp_code }})">View</button>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" onclick="openEditEmployee({{ emp.emp_code }})">Edit</button>
             </td>
         </tr>
         {% endfor %}
@@ -613,8 +613,8 @@ document.addEventListener('input', e => {
 /* ======================================================
    OPEN EDIT EMPLOYEE
 ====================================================== */
-function openEditEmployee(empId) {
-    fetch(`/admin/employees/view/${empId}`)
+function openEditEmployee(empCode) {
+    fetch(`/admin/employees/view/${empCode}`)
         .then(r => r.json())
         .then(emp => {
 
@@ -662,8 +662,8 @@ function openEditEmployee(empId) {
 /* ======================================================
    OPEN VIEW EMPLOYEE
 ====================================================== */
-function openViewEmployee(empId) {
-    fetch(`/admin/employees/view/${empId}`)
+function openViewEmployee(empCode) {
+    fetch(`/admin/employees/view/${empCode}`)
         .then(r => r.json())
         .then(emp => {
 
