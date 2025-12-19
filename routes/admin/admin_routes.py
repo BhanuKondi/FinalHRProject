@@ -77,7 +77,7 @@ def add_employee():
  
         # ---------- SALARY ----------
         salary = EmployeeSalary(
-            employee_id=emp.id,
+            emp_code=emp.emp_code,
             gross_salary=float(request.form.get("ctc", 0)),
             basic_percent=float(request.form.get("basic_percent", 50)),
             hra_percent=float(request.form.get("hra_percent", 20)),
@@ -117,8 +117,8 @@ def add_employee():
 @admin_bp.route("/employees/view/<int:id>")
 def view_employee(id):
     emp = Employee.query.get_or_404(id)
-    salary = EmployeeSalary.query.filter_by(employee_id=id).first()
-    account = EmployeeAccount.query.filter_by(employee_id=id).first()
+    salary = EmployeeSalary.query.filter_by(emp_code=id).first()
+    account = EmployeeAccount.query.filter_by(emp_code=id).first()
  
     return jsonify({
         "emp_code": emp.emp_code,
